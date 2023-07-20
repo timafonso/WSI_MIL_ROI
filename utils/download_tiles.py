@@ -1,7 +1,8 @@
+from utils.file_utils import create_dir, is_file, save_img
 from utils.gdc_api_utils import getTile
 from utils.preprocessing_utils import getTissuePercentage, getBackgroundColor, addMargin, TISSUE_THRESHOLD
 from utils.tile_selection import getImageTiles
-from utils.file_utils import create_dir, is_file, save_img
+from utils.tile_visualization import getPixelsInThumbnail
 
 from os import listdir
 from math import log2
@@ -41,8 +42,7 @@ def downloadWSIPatch(folder, slide_id, slide_label, magnification, magnification
         coord_x = coords[i][0]
         coord_y = coords[i][1]
         file_path = "{main_dir}/bag_{label}_{bag}/patch_{x}_{y}.png".format(
-            main_dir=folder, 
-            mag=magnification, 
+            main_dir=folder,  
             bag=slide_id, 
             label=slide_label, 
             x=coord_x, 
@@ -103,6 +103,13 @@ def downloadPatchesFromFile(csv_filename, folder_name, number_of_slides, magnifi
                 t.start()
             for t in threads:
                 t.join()
+
+            img, _ = getPixelsInThumbnail(slide_info["id"][i], magnification_level, tissue_coords)
+            save_img(img, "{main_dir}/bag_{label}_{bag}/thumbnail.png".format(
+                        main_dir=folder_name,  
+                        bag=slide_info["id"][i], 
+                        label=label, 
+                        ))
 
             number_of_slides -= 1
             if number_of_slides == 0:
