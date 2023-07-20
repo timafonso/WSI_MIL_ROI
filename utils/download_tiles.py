@@ -6,6 +6,7 @@ from utils.tile_visualization import getPixelsInThumbnail
 
 from os import listdir
 from math import log2
+from PIL import Image
 from PIL import ImageFile
 from random import seed
 from shutil import rmtree
@@ -24,7 +25,7 @@ NUM_THREADS = 4
 #============================================ Download Patches =====================================================
 
       
-def downloadWSIPatch(folder, slide_id, slide_label, magnification, magnification_lvl, coords, start_index, end_index, num_threads=NUM_THREADS):
+def downloadWSIPatch(folder, slide_id, slide_label, percentage, magnification_lvl, coords, start_index, end_index, num_threads=NUM_THREADS):
     """fetches a WSI patch at a certain magnification and coords and stores it in a file under the dir
     bags/bag{slide_id} with the na with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             futures = [executor.submit(downloadWSIPatch, slide_ids[i], slide_labels[i], magnification, coord[0], coord[1], test) 
@@ -41,19 +42,21 @@ def downloadWSIPatch(folder, slide_id, slide_label, magnification, magnification
     for i in range(start_index, end_index, num_threads):
         coord_x = coords[i][0]
         coord_y = coords[i][1]
-        file_path = "{main_dir}/bag_{label}_{bag}/patch_{x}_{y}.png".format(
+        file_path = "{main_dir}/{id}_{label}_{perc}/patch_{x}_{y}.png".format(
             main_dir=folder,  
-            bag=slide_id, 
+            id=slide_id, 
             label=slide_label, 
+            perc=percentage,
             x=coord_x, 
             y=coord_y)
         
         if not is_file(file_path): 
             img = getTile(slide_id, magnification_lvl, coord_x, coord_y)
-            right_padding = 512 - img.size[0] if img.size[0] < 512 else 0
-            bottom_padding = 512 - img.size[1] if img.size[1] < 512 else 0
-            background_color = getBackgroundColor(img)
-            img = addMargin(img, 0, right_padding, bottom_padding, 0, background_color)
+            if img.size[0] < 512 or img.size[1] < 512:
+                right_padding = 512 - img.size[0] if img.size[0] < 512 else 0
+                bottom_padding = 512 - img.size[1] if img.size[1] < 512 else 0
+                background_color = getBackgroundColor(img)
+                img = addMargin(img, 0, right_padding, bottom_padding, 0, background_color)
 
             if img.size[0] >= 512 and img.size[1] >= 512 and getTissuePercentage(img) > TISSUE_THRESHOLD:
                 img = img.crop((0, 0, 512, 512))
@@ -77,7 +80,7 @@ def downloadPatchesFromFile(csv_filename, folder_name, number_of_slides, magnifi
     create_dir("{main_dir}".format(main_dir=folder_name))
     for i in range(len(slide_info)):
         print(i)
-        if create_dir("{main_dir}/bag_{label}_{id}".format(main_dir=folder_name, label=label, id=slide_info["id"][i])):
+        if create_dir("{main_dir}/{id}_{label}_{perc}".format(main_dir=folder_name, label=label, id=slide_info["id"][i], perc=slide_info["tumor_percentage"][i])):
             max_magnification = 10/slide_info["mpp"][i]
             levels_to_decrease = int(log2(max_magnification / magnification))
             magnification_level = slide_info["max_level"][i] - levels_to_decrease
@@ -91,7 +94,7 @@ def downloadPatchesFromFile(csv_filename, folder_name, number_of_slides, magnifi
                     folder_name,
                     slide_info["id"][i], 
                     label, 
-                    magnification, 
+                    slide_info["tumor_percentage"][i], 
                     magnification_level, 
                     tissue_coords, 
                     start_index, 
@@ -105,10 +108,11 @@ def downloadPatchesFromFile(csv_filename, folder_name, number_of_slides, magnifi
                 t.join()
 
             img, _ = getPixelsInThumbnail(slide_info["id"][i], magnification_level, tissue_coords)
-            save_img(img, "{main_dir}/bag_{label}_{bag}/thumbnail.png".format(
+            save_img(Image.fromarray(img), "{main_dir}/{id}_{label}_{perc}/thumbnail.png".format(
                         main_dir=folder_name,  
-                        bag=slide_info["id"][i], 
+                        id=slide_info["id"][i], 
                         label=label, 
+                        perc=slide_info["tumor_percentage"][i]
                         ))
 
             number_of_slides -= 1

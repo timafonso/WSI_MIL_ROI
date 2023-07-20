@@ -67,29 +67,29 @@ def getBackgroundColor(img):
     cv2_img = np.array(img)
 
     cv2_img = cv2_img[:,:,::-1].copy()
-    lower_white = np.array([200, 200, 200])
-    upper_white = np.array([255, 255, 255])
-
-    mask = cv2.inRange(cv2_img, lower_white, upper_white)
-    result = cv2.bitwise_and(cv2_img, cv2_img, mask=mask)
+    gray_img = cv2.cvtColor(cv2_img, cv2.COLOR_RGB2GRAY)
+    _, im_bw = cv2.threshold(gray_img, 140, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    black_pixel_coords = np.column_stack(np.where(im_bw != 0))
 
     avg_red = 0
     avg_green = 0
     avg_blue = 0
     total_pixels = 0
-    for x in range(result.shape[0]):
-        for y in range(result.shape[1]):
-            rgb = result[x, y]
-            if not np.array_equal(rgb, np.array([0,0,0])):
-                avg_red += rgb[0]
-                avg_green += rgb[1]
-                avg_blue += rgb[2]
-                
-                total_pixels += 1
+    for pixel_index in range(black_pixel_coords.shape[0]):
+        x, y = black_pixel_coords[pixel_index, 0], black_pixel_coords[pixel_index, 1] 
+        rgb = cv2_img[x, y]
+        if not (rgb[0] > rgb[1] or rgb[0] > rgb[2]):
+            avg_red += rgb[0]
+            avg_green += rgb[1]
+            avg_blue += rgb[2]
+            total_pixels += 1
 
-    avg_red /= total_pixels
-    avg_green /= total_pixels
-    avg_blue /= total_pixels
+    if total_pixels != 0:
+        avg_red /= total_pixels
+        avg_green /= total_pixels
+        avg_blue /= total_pixels
+    else:
+        avg_red, avg_green, avg_blue = 0,0,0
 
     return (int(avg_red), int(avg_green), int(avg_blue))
 
