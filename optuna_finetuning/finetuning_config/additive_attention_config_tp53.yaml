@@ -1,0 +1,18 @@
+model: AdditiveAttention
+task: tp53
+learning_rate:
+  - 1.0692683094363025e-05
+  - 0.0006376938517803
+weight_decay:
+  - 0.0001203149225447
+  - 0.0071975291661393
+log_batch_size:
+  - 2
+  - 5
+epochs:
+  - 5
+  - 60
+feature_selection: False
+weights_init:
+  - xavier
+  - kaiming

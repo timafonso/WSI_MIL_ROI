@@ -1,0 +1,18 @@
+model: ModAdditiveAttention
+task: tp53
+learning_rate:
+  - 1.0101967948472169e-05
+  - 0.0005160761341911
+weight_decay:
+  - 0.0001675803248625 
+  - 0.008297884047242
+log_batch_size:
+  - 0
+  - 5
+epochs:
+  - 5
+  - 60
+feature_selection: False
+weights_init:
+  - xavier
+  - kaiming

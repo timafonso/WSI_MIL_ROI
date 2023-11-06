@@ -1,0 +1,18 @@
+model: GatedAttention
+task: label
+learning_rate:
+  - 0.00001
+  - 0.001
+weight_decay:
+  - 0.0001
+  - 0.01
+log_batch_size:
+  - 0
+  - 5
+epochs:
+  - 5
+  - 60
+feature_selection: False
+weights_init:
+  - xavier
+  - kaiming
